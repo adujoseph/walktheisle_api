@@ -19,7 +19,6 @@ const s3 = new S3Client({
 })
 
 const uploadImage = async (req, res) => {
-console.log(req.file, "file")
     try {
         const params = {
             Bucket: bucketname,
@@ -30,11 +29,10 @@ console.log(req.file, "file")
         const command = new PutObjectCommand(params)
         await s3.send(command)
         let data = {
-            phone: req.file.phone,
-            userId: req.file.userId,
+            phone: req.body.phone,
+            userId: req.body.userId,
             imageName: randomImageName()
         }
-        console.log({data})
         const upload = await Upload.create(data);
         res.status(200).json({ data: upload, message: 'image uploaded successfully' })
     } catch (error) {
@@ -46,16 +44,15 @@ console.log(req.file, "file")
 const getAllImages = async (req, res) => {
     try {
         const images = await Upload.find({});
+        console.log(images)
         for(image of images) {
-            console.log('array', image)
             const getObjectParams = {
                 Bucket: bucketname,
                 Key: image.imageName,
             }
             const command = new GetObjectCommand(getObjectParams);
             const url = await getSignedUrl(s3, command, { expiresIn: 36000 });
-            console.log({url})
-            image.imageUrl = url
+            if(url) image.imageName = url
         }
         res.status(200).json({ data: images, message: "image fetched successfully" })
     } catch (error) {

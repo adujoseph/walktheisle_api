@@ -8,6 +8,9 @@ const { sendOtp } = require("../services/sendOtp");
 const { verifyOtp } = require("../services/verifyOtp");
 const { sendSms } = require("../services/sendSms");
 const { sendVoiceOtp } = require("../services/sendVoiceOtp");
+const { hash, compare, genSalt } = require("bcrypt");
+const Otp = require('../models/otp.model');
+const { OtpNumber } = require("../helper/generateOTPCode");
 
 
 const createUser = async (req, res) => {
@@ -56,7 +59,7 @@ const createNewUser = async (req, res) => {
     const savedUser = await newUser.save();
     const token = jwt.sign({ userId: savedUser._id }, 'your_secret_key', { expiresIn: '1h' });
     let message = `Hello ${name}, Thank you for registering to be a path of our big day. Your invite code is ${inviteCode} and please note that this invite will only admit one person - Joseph & Zion`
-    const {data, status} = await sendSms(phone, message)
+    const { data, status } = await sendSms(phone, message)
     res.status(201).json({
       message: 'User created successfully',
       data: {
@@ -111,12 +114,12 @@ const getUser = async (req, res) => {
 };
 
 const requestOtp = async (req, res) => {
-  const {phone} = req.body
+  const { phone } = req.body
   const existingPhone = await UserModel.findOne({ phone });
   if (existingPhone) {
     return res.status(409).json({ message: 'phone number already exists, please login instead' });
   }
- 
+
   try {
     const phoneNumber = req.body.phone
     if (!phoneNumber || phoneNumber.length > 13) {
@@ -149,7 +152,7 @@ const requestVoiceOtp = async (req, res) => {
 const checkInUser = async (req, res) => {
   try {
     const { id } = req.body;
-    if(!id){
+    if (!id) {
       return res.status(404).json({ message: "ID is not found" });
     }
     const updateUser = await UserModel.findByIdAndUpdate(id, req.body);
@@ -162,11 +165,110 @@ const checkInUser = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 }
+const changePassword = async (req, res) => {
+  try {
+
+    const { phone, currentPassword, newPassword } = req.body;
+
+    // Find the user by ID
+    const user = await UserModel.findOne({ phone });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Validate current password
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Incorrect current password' });
+    }
+
+    // Hash the new password
+    const salt = await genSalt(10);
+    user.password = await hash(newPassword, salt);
+
+    // Save the updated user
+    await user.save();
+
+    res.status(200).json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+const resetPassword = async (req, res) => {
+  try {
+
+    const { phone, code, newPassword } = req.body;
+
+    if (!phone || phone.length !== 13) {
+      return res.status(409).json({ message: 'Enter valid otp code' });
+    }
+    if (!code || code.length !== 6) {
+      return res.status(409).json({ message: 'Enter valid otp code' });
+    }
+    const user = await UserModel.findOne({ phone });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const validOtp = await Otp.findOne({
+      email: user?.email,
+      otp: code,
+      expiresAt: { $gt: Date.now() }, // Check for unexpired OTP
+    });
+
+    if (validOtp) {
+      const salt = await genSalt(10);
+      user.password = await hash(newPassword, salt);
+      await user.save();
+      await Otp.deleteOne({email:  user?.email });
+      return res.status(200).json({ message: 'Password reset is successful' });
+    } else {
+      return res.status(409).json({ message: 'Otp code is no longer valid' });
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+const forgotPassword = async (req, res) => {
+  try {
+    const { phone } = req.body;
+    const user = await UserModel.findOne({ phone });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    const otp = await OtpNumber(6);
+    const data = {
+      email: user?.email,
+      otp
+    }
+
+    const existingEmail = await Otp.findOne({ email: user?.email })
+    if (existingEmail) {
+      await Otp.findOneAndUpdate({
+        email: user?.email, 
+        otp,
+        expiresAt: Date.now() + 10 * 60 * 1000
+      })
+    } else {
+      await Otp.create(data);
+    }
+    // Send OTP to user here
+    res.status(200).json({ message: "Otp sent succesffuly" });
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
 
 const updateUserDetails = async (req, res) => {
   try {
     const { id } = req.body;
-    if(!id){
+    if (!id) {
       return res.status(404).json({ message: "ID is not found" });
     }
     const updateUser = await UserModel.findByIdAndUpdate(id, req.body);
@@ -188,9 +290,9 @@ const searchUserByParams = async (req, res) => {
   try {
     const users = await UserModel.find({
       "$or": [
-        { phone: { $regex: new RegExp(searchTerm, 'i') } }, 
-        { name: { $regex: new RegExp(searchTerm, 'i') } }, 
-        { inviteCode: searchTerm }, 
+        { phone: { $regex: new RegExp(searchTerm, 'i') } },
+        { name: { $regex: new RegExp(searchTerm, 'i') } },
+        { inviteCode: searchTerm },
       ]
     });
     res.json(users);
@@ -262,4 +364,7 @@ module.exports = {
   requestVoiceOtp,
   searchUserByParams,
   checkInUser,
+  changePassword,
+  resetPassword,
+  forgotPassword,
 }

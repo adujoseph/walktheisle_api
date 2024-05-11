@@ -12,6 +12,9 @@ const {
     requestVoiceOtp,
     searchUserByParams,
     checkInUser,
+    changePassword,
+    resetPassword,
+    forgotPassword,
 } = require("../controllers/user.controller");
 const { newUserValidator } = require("../middleware/validator");
 const UserModel = require("../models/user.model");
@@ -466,6 +469,138 @@ router.post("/otp-validation", validateOtp);
  *         description: Internal server error.
  */
 router.put("/check-in", checkInUser);
+
+/**
+ * @swagger
+ * /api/users/change-password:
+ *   put:
+ *     summary: Change Password
+ *     description: Change user's password.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - newPassword
+ *               - oldPassword
+ *             properties:
+ *               newPassword:
+ *                 type: string
+ *                 description: The user is checked in for event.
+ *               oldPassword:
+ *                  type: string
+ *     tags:
+ *       - Users
+ *     responses:
+ *       200:
+ *         description: User password updated successfully.
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               description: Success message.
+ *             userId:
+ *               type: integer
+ *               description: The ID of the newly created user (optional).
+ *       400:
+ *         description: Bad request. Please ensure the request body is valid.
+ *       409:
+ *         description: Conflict. A user with the same email address already exists.
+ *       500:
+ *         description: Internal server error.
+ */
+router.put("/change-password", changePassword)
+
+/**
+ * @swagger
+ * /api/users/reset-password:
+ *   put:
+ *     summary: Reset Password
+ *     description: Reset users password with OTP.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - code
+ *               - newPassword
+ *             properties:
+ *               code:
+ *                 type: string
+ *                 description: The user is checked in for event.
+ *               newPassword:
+ *                  type: string
+ *     tags:
+ *       - Users
+ *     responses:
+ *       200:
+ *         description: User detail updated successfully.
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               description: Success message.
+ *             userId:
+ *               type: integer
+ *               description: The ID of the newly created user (optional).
+ *       400:
+ *         description: Bad request. Please ensure the request body is valid.
+ *       409:
+ *         description: Conflict. A user with the same email address already exists.
+ *       500:
+ *         description: Internal server error.
+ */
+router.put("/reset-password", resetPassword)
+
+
+/**
+ * @swagger
+ * /api/users/forgot-password:
+ *   put:
+ *     summary: Forgot Password
+ *     description: User get an otp to reset their password.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - phone
+ *             properties:
+ *               phone:
+ *                 type: string
+ *                 description: The user phone number used while registering.
+ *               userId:
+ *                  type: string
+ *     tags:
+ *       - Users
+ *     responses:
+ *       200:
+ *         description: User detail updated successfully.
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               description: Success message.
+ *             userId:
+ *               type: integer
+ *               description: The ID of the newly created user (optional).
+ *       400:
+ *         description: Bad request. Please ensure the request body is valid.
+ *       409:
+ *         description: Conflict. A user with the same email address already exists.
+ *       500:
+ *         description: Internal server error.
+ */
+router.put("/forgot-password", forgotPassword)
 
 router.get("/profile", isAuth, sendProfile);
 router.get("/private", isAuth, privateResponse);
