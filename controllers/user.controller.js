@@ -3,6 +3,11 @@ const jwt = require('jsonwebtoken')
 const { v4: uuidv4 } = require('uuid');
 const QRCode = require('qrcode');
 const otpService = require('../services/otpService');
+const { generateInviteCode } = require("../helper/generateInviteCode");
+const { sendOtp } = require("../services/sendOtp");
+const { verifyOtp } = require("../services/verifyOtp");
+const { sendSms } = require("../services/sendSms");
+const { sendVoiceOtp } = require("../services/sendVoiceOtp");
 
 
 const createUser = async (req, res) => {
@@ -32,13 +37,12 @@ const createNewUser = async (req, res) => {
       return res.status(409).json({ message: 'phone number already exists' });
     }
     if (existingEmail) {
-      return res.status(409).json({ message: 'email number already exists' });
+      return res.status(409).json({ message: 'email address already exists' });
     }
 
-    const inviteCode = uuidv4();
+    // const inviteCode = uuidv4(); 
+    const inviteCode = generateInviteCode(tableId, phone)
     const qrCodeUrl = await generateQRCodeUrl(inviteCode);
-    // const hashedPassword = await bcrypt.hash(password, 10);
-    // Create new user
     const newUser = new UserModel({
       name,
       tableId,
@@ -47,9 +51,12 @@ const createNewUser = async (req, res) => {
       password,
       role,
       inviteCode,
+
     });
     const savedUser = await newUser.save();
     const token = jwt.sign({ userId: savedUser._id }, 'your_secret_key', { expiresIn: '1h' });
+    let message = `Hello ${name}, Thank you for registering to be a path of our big day. Your invite code is ${inviteCode} and please note that this invite will only admit one person - Joseph & Zion`
+    const {data, status} = await sendSms(phone, message)
     res.status(201).json({
       message: 'User created successfully',
       data: {
@@ -70,7 +77,6 @@ const signin = async (req, res) => {
   const { email, password, phone } = req.body;
 
   const user = await UserModel.findOne({ phone });
-  console.log(user)
   if (!user) return res.status(404).json({ error: "User not found!" });
 
   const isMatched = await user.comparePassword(password);
@@ -105,18 +111,111 @@ const getUser = async (req, res) => {
 };
 
 const requestOtp = async (req, res) => {
-  const name = req.body.name
-  const phoneNumber = req.body.phone
-  const response = await otpService.sendOtp(name, phoneNumber);
-  res.status(200).json(response);
+  const {phone} = req.body
+  const existingPhone = await UserModel.findOne({ phone });
+  if (existingPhone) {
+    return res.status(409).json({ message: 'phone number already exists, please login instead' });
+  }
+ 
+  try {
+    const phoneNumber = req.body.phone
+    if (!phoneNumber || phoneNumber.length > 13) {
+      res.status(401).json({ data: null, message: 'Please enter valid phone number' })
+      return
+    }
+    const { data, status } = await sendOtp(phoneNumber)
+    console.log(data, status)
+    res.status(200).json({ data: data, message: 'Successful' });
+  } catch (err) {
+    res.status(422).json({ data: null, message: err })
+  }
+}
+
+const requestVoiceOtp = async (req, res) => {
+  try {
+    const phoneNumber = req.body.phone
+    if (!phoneNumber || phoneNumber.length > 13) {
+      res.status(401).json({ data: null, message: 'Please enter valid phone number' })
+      return
+    }
+    const { data, status } = await sendVoiceOtp(phoneNumber)
+    console.log(data, status)
+    res.status(200).json({ data: data, message: 'Successful' });
+  } catch (err) {
+    res.status(422).json({ data: null, message: err })
+  }
+}
+
+const checkInUser = async (req, res) => {
+  try {
+    const { id } = req.body;
+    if(!id){
+      return res.status(404).json({ message: "ID is not found" });
+    }
+    const updateUser = await UserModel.findByIdAndUpdate(id, req.body);
+    if (!updateUser) {
+      return res.status(404).json({ message: "User with this ID is not found" });
+    }
+    const updatedUser = await UserModel.findById(id);
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
+const updateUserDetails = async (req, res) => {
+  try {
+    const { id } = req.body;
+    if(!id){
+      return res.status(404).json({ message: "ID is not found" });
+    }
+    const updateUser = await UserModel.findByIdAndUpdate(id, req.body);
+    if (!updateUser) {
+      return res.status(404).json({ message: "User with this ID is not found" });
+    }
+    res.status(200).json(updateUser);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
+const searchUserByParams = async (req, res) => {
+  const { searchTerm } = req.query;
+  if (!searchTerm) {
+    return res.status(400).send('Please provide a search term (phone, name, or invite code)');
+  }
+
+  try {
+    const users = await UserModel.find({
+      "$or": [
+        { phone: { $regex: new RegExp(searchTerm, 'i') } }, 
+        { name: { $regex: new RegExp(searchTerm, 'i') } }, 
+        { inviteCode: searchTerm }, 
+      ]
+    });
+    res.json(users);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error fetching users');
+  }
 }
 
 
 const validateOtp = async (req, res) => {
   const pin = req.body.pin;
   const pinId = req.body.pinId;
-  const response = await otpService.verifyOtp(pinId, pin);
-  res.status(200).json(response);
+  if (!pin || pin.length !== 6) {
+    res.status(401).json({ data: null, message: 'Enter valid pin' })
+    return
+  }
+  if (!pinId) {
+    res.status(401).json({ data: null, message: 'Enter valid pin ID' })
+    return
+  }
+  const { data, status } = await verifyOtp(pinId, pin)
+  if (status === 200) res.status(200).json({ data, message: 'Successful' });
+  res.status(422).json({ data: null, message: 'An error occured' })
+
 }
 
 const privateResponse = async (req, res) => {
@@ -159,5 +258,8 @@ module.exports = {
   getAllUsers,
   getUser,
   requestOtp,
-  validateOtp
+  validateOtp,
+  requestVoiceOtp,
+  searchUserByParams,
+  checkInUser,
 }

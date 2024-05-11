@@ -1,5 +1,5 @@
-const { Schema, model} =require('mongoose');
-const { hash, compare, genSalt }  = require("bcrypt");
+const { Schema, model } = require('mongoose');
+const { hash, compare, genSalt } = require("bcrypt");
 
 
 const userSchema = new Schema(
@@ -10,11 +10,11 @@ const userSchema = new Schema(
       trim: true,
     },
     phone: {
-        type: String,
-        required: true,
-        trim: true,
-        unique: true,
-      },
+      type: String,
+      required: true,
+      trim: true,
+      unique: true,
+    },
     email: {
       type: String,
       required: true,
@@ -25,9 +25,23 @@ const userSchema = new Schema(
       required: true,
     },
     tableId: {
-        type: String,
-        required: true
-      },
+      type: String,
+      required: true
+    },
+    inviteCode: {
+      type: String,
+      required: true
+    },
+    isRegistered: {
+      type: Boolean,
+      default: true,
+      required: true
+    },
+    isCheckedIn: {
+      type: Boolean,
+      default: false,
+      required: true
+    },
     role: {
       type: String,
       enum: ["user", "admin", "owner"],

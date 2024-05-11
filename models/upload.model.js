@@ -2,14 +2,15 @@ const mongoose = require("mongoose");
 
 const UploadSchema = mongoose.Schema(
   {
-    name: {
+    phone: {
       type: String,
-      unique: true
     },
-    fancy: {
-        type: String,
-        unique: true
-      },
+    userId: {
+      type: String,
+    },
+    imageName: {
+      type: String,
+    },
   },
   {
     timestamps: true,

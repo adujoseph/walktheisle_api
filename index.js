@@ -4,12 +4,10 @@ const productRoute = require("./routes/product.route.js");
 const tablesRoute = require("./routes/table.route.js");
 const userRoute = require("./routes/user.route.js");
 const uploadRoute = require('./routes/upload.route.js')
+const otpRoute = require('./routes/otp.route.js');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsDoc = require('swagger-jsdoc');
-
-require('dotenv').config()
-
-
+require('dotenv').config();
 const PORT = process.env.PORT || 4000
 const DB_CONNECT = process.env.DB_CONNECT_STRING
 
@@ -27,7 +25,7 @@ const swaggerOptions = {
                 url: "https://spdx.org/licenses/MIT.html",
             },
         },
-        scheme:['http','https'],
+        scheme: ['http', 'https'],
         securityDefinitions: {
             bearerAuth: {
                 type: 'apiKey',
@@ -43,19 +41,37 @@ const swaggerOptions = {
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 
 const app = express();
+const http = require('http').createServer(app);
+const { Server } = require('socket.io'); // Import Server from socket.io
+const io = new Server(http);
 
+
+
+app.get("/", (req, res) => {
+    io.on('connection', (socket) => {
+        console.log('Client connected');
+        socket.emit('endpoint-called', { someData: 'from-endpoint' });
+        res.send('Endpoint response');
+    });
+})
 
 // middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs, { explorer: true }));
 
-
 // routes
 app.use("/api/products", productRoute);
 app.use("/api/tables", tablesRoute);
 app.use("/api/users", userRoute);
 app.use("/api/uploads", uploadRoute);
+app.use("/api/otp", otpRoute);
+
+
+// app.use("/", async (req, res) => {
+//     const requ = req.body
+//     res.status(200).json({...requ})
+// })
 
 mongoose
     .connect(DB_CONNECT)

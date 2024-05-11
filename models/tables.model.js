@@ -4,7 +4,6 @@ const TablesSchema = mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, "Please enter table name"],
       unique: true
     },
     alias: {
@@ -12,21 +11,19 @@ const TablesSchema = mongoose.Schema(
         required: [true, "Please enter table alias"],
         unique: true
       },
-
     capacity: {
       type: Number,
       required: true,
-      default: 0,
+      default: 10,
     },
     status: {
       type: Boolean,
       required: false,
       default: false,
     },
-
-    image: {
+    description: {
       type: String,
-      required: false,
+      required: true,
     },
   },
   {

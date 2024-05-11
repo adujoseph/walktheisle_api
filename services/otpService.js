@@ -1,17 +1,21 @@
 const Termii = require("termii-nodejs").Termii;
-const sender_id = process.env.SENDER_ID;
-const api_key = process.env.API_KEY;
+require('dotenv').config();
+const sender_id = process.env.TERMII_SENDER_ID;
+const api_key = process.env.TERMII_API_KEY;
+
 const termii = new Termii({
     api_key: api_key,
 	sender_id: sender_id,
-    channel: "dnd",
+    channel: "generic",
 	pin_attempts: 3,
 	pin_time: 5,
 	pin_length: 6,
-	pin_type: "NUMERIC"
+    pin_type:'numeric',
+    message_type : "text",
 });
 
-const sendOtp = (name, phoneNumber) => {
+const sendOtp = (name, phoneNumber,) => {
+    console.log('Name')
     const pinPlaceholder = '< 123456 >';
     const message = `Hello ${name}, your OTP is ${pinPlaceholder}. Do not share your OTP with anyone.`;
     try{
@@ -23,11 +27,10 @@ const sendOtp = (name, phoneNumber) => {
     }
 }
 
-const sendSms = (recipient, message) => {
-    
-    const message = `Hello ${recipient?.name}, your OTP is ${pinPlaceholder}. This pin will expire in 1 minute.`;
+const sendSms = (phone, name, inviteCode) => {
+    let message = `Hello ${name}, Thank you for your interest in attending our wedding. Your invite code is ${inviteCode}. Lots of Love - Zion & Joseph`;
     try{
-        const response = termii.sendMessage(recipient?.phone, message);
+        const response = termii.sendMessage(phone, message);
         return response;
     }
     catch(err){
