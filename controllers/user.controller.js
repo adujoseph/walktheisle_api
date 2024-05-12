@@ -11,6 +11,7 @@ const { sendVoiceOtp } = require("../services/sendVoiceOtp");
 const { hash, compare, genSalt } = require("bcrypt");
 const Otp = require('../models/otp.model');
 const { OtpNumber } = require("../helper/generateOTPCode");
+const { sendEmail } = require("../services/sendEmail");
 
 
 const createUser = async (req, res) => {
@@ -67,6 +68,7 @@ const createNewUser = async (req, res) => {
         token,
         tableId,
         inviteCode,
+        name
       },
     });
   } catch (error) {

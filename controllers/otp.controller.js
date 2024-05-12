@@ -1,15 +1,23 @@
 const { OtpNumber } = require('../helper/generateOTPCode');
 const Otp = require('../models/otp.model');
-const UserModel = require('../models/user.model')
+const UserModel = require('../models/user.model');
+const { sendSms } = require('../services/otpService');
+const { sendEmail } = require('../services/sendEmail');
 
 const generateOTP = async (req, res) => {
-    const { email } = req.body
-    if(!email){
-        return res.status(401).json({message: 'Enter email or phone number'})
+    const { email, phone } = req.body
+    if (!email || !phone || phone.length > 13) {
+        return res.status(401).json({ message: 'Enter email and phone number' })
     }
-    const userExist = await UserModel.findOne({email});
-    if(userExist){
-        return res.status(409).json({message: 'user with similar credential alredy exist'})
+
+    const userExist = await UserModel.findOne({ email });
+    if (userExist) {
+        return res.status(409).json({ message: 'user with similar credential alredy exist' })
+    }
+
+    const userExist_ = await UserModel.findOne({ phone });
+    if (userExist_) {
+        return res.status(409).json({ message: 'user with similar credential alredy exist' })
     }
     const otp = await OtpNumber(6);
     const data = {
@@ -19,12 +27,16 @@ const generateOTP = async (req, res) => {
     try {
         const existingEmail = await Otp.findOne({ email })
         if (existingEmail) {
-          await  Otp.findOneAndUpdate({email, otp, 
-            expiresAt: Date.now() + 10 * 60 * 1000 })
+            await Otp.findOneAndUpdate({
+                email, otp,
+                expiresAt: Date.now() + 10 * 60 * 1000
+            })
         } else {
             await Otp.create(data);
         }
-        // Send OTP to user here
+        const message = `Be a part of our joyous moment, kindly confirm your registration with this code :${otp}`
+        await sendEmail(email, otp)
+        await sendSms(phone, message)
         res.status(200).json({ message: "Otp sent succesffuly" });
     } catch (error) {
         res.status(500).json({ message: error.message });
