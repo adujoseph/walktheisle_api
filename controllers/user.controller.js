@@ -95,7 +95,8 @@ const signin = async (req, res) => {
   res.json({
     success: true,
     token,
-    profile: { name: user.name, role: user.role, email: user.email },
+    profile: { name: user.name, role: user.role, email: user.email, accessCode: user.inviteCode, table: user.tableId , phone: user.phone, isCheckedIn: user.
+      isCheckedIn},
   });
 };
 
