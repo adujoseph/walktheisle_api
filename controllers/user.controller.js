@@ -91,13 +91,13 @@ const signin = async (req, res) => {
 
   //   user is there and password is cool
   const token = jwt.sign({ id: user._id.toString() }, "secret");
-  const qrCodeUrl = await generateQRCodeUrl(inviteCode);
+  const qrCodeUrl = await generateQRCodeUrl(user.inviteCode);
 
   res.json({
     success: true,
     token,
     profile: { name: user.name, role: user.role, email: user.email, accessCode: user.inviteCode, table: user.tableId , phone: user.phone, isCheckedIn: user.
-      isCheckedIn,  qrCodeUrl},
+      isCheckedIn, qrCodeUrl},
   });
 };
 
