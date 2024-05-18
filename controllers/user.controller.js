@@ -33,6 +33,9 @@ const createNewUser = async (req, res) => {
   if (!name || !email || !phone || !password || !role || !tableId) {
     return res.status(400).json({ message: 'Missing required fields' });
   }
+  if(phone.length !== 13){
+    return res.status(400).json({ message: 'Invalid phone number' });
+  }
 
   try {
     const existingPhone = await UserModel.findOne({ phone });
@@ -60,7 +63,8 @@ const createNewUser = async (req, res) => {
     const savedUser = await newUser.save();
     const token = jwt.sign({ userId: savedUser._id }, 'your_secret_key', { expiresIn: '1h' });
     let message = `Hello ${name}, Thank you for registering to be a path of our big day. Your invite code is ${inviteCode} and please note that this invite will only admit one person - Joseph & Zion`
-    const { data, status } = await sendSms(phone, message)
+    const response = await sendSms(phone, message)
+    console.log({response}, 'My Response here')
     res.status(201).json({
       message: 'User created successfully',
       data: {
