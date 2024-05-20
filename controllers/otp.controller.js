@@ -7,12 +7,15 @@ const { sendEmail } = require('../services/sendEmail');
 const generateOTP = async (req, res) => {
     const { email, phone } = req.body
     if (!email || !phone || phone.length > 13) {
+        return res.status(401).json({ message: 'Enter email' })
+    }
+    if (!phone || phone.length > 13) {
         return res.status(401).json({ message: 'Enter email and phone number' })
     }
 
     const userExist = await UserModel.findOne({ email });
     if (userExist) {
-        return res.status(409).json({ message: 'user with similar credential alredy exist' })
+        return res.status(409).json({ message: 'user with similar credential already exist' })
     }
 
     const userExist_ = await UserModel.findOne({ phone });
@@ -24,17 +27,20 @@ const generateOTP = async (req, res) => {
         email,
         otp
     }
+
+
     try {
-        const existingEmail = await Otp.findOne({ email })
-        if (existingEmail) {
+        const existingEmail = await Otp.find({ email })
+        if (existingEmail.length) {
             await Otp.findOneAndUpdate({
-                email, otp,
+                email,
+                otp,
                 expiresAt: Date.now() + 10 * 60 * 1000
             })
         } else {
             await Otp.create(data);
         }
-        const message = `Be a part of our joyous moment, kindly confirm your registration with this code :${otp}`
+        const message = `Your OTP from AduraTemi 2024 is here :${otp}`
         await sendEmail(email, otp)
         await sendSms(phone, message)
         res.status(200).json({ message: "Otp sent succesffuly" });
@@ -53,6 +59,8 @@ const validateOTP = async (req, res) => {
             otp,
             expiresAt: { $gt: Date.now() }, // Check for unexpired OTP
         });
+
+        console.log(validOtp)
 
         if (validOtp) {
             // OTP is valid, remove it from storage to prevent reuse
