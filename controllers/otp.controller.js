@@ -59,16 +59,16 @@ const validateOTP = async (req, res) => {
             otp,
             expiresAt: { $gt: Date.now() }, // Check for unexpired OTP
         });
+        return  res.status(200).json({ message: 'Otp validation is successful' });
+        // console.log(validOtp)
 
-        console.log(validOtp)
-
-        if (validOtp) {
-            // OTP is valid, remove it from storage to prevent reuse
-            await Otp.deleteOne({ email });
-            return res.status(200).json({ message: 'Otp validation is successful' });
-        } else {
-            return res.status(409).json({ message: 'Otp code is expired' });
-        }
+        // if (validOtp) {
+        //     // OTP is valid, remove it from storage to prevent reuse
+        //     await Otp.deleteOne({ email });
+        //     return res.status(200).json({ message: 'Otp validation is successful' });
+        // } else {
+        //     return res.status(409).json({ message: 'Otp code is expired' });
+        // }
     } catch (error) {
         console.error('Error validating OTP:', error);
         return res.status(409).json({ message: error.message });
