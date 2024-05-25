@@ -1,5 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const cors = require(cors);
 const productRoute = require("./routes/product.route.js");
 const tablesRoute = require("./routes/table.route.js");
 const userRoute = require("./routes/user.route.js");
@@ -56,6 +57,7 @@ app.get("/", (req, res) => {
 })
 
 // middleware
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs, { explorer: true }));
