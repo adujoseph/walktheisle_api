@@ -44,7 +44,7 @@ const uploadImage = async (req, res) => {
 const getAllImages = async (req, res) => {
     try {
         const images = await Upload.find({});
-        console.log(images)
+        
         for(image of images) {
             const getObjectParams = {
                 Bucket: bucketname,
