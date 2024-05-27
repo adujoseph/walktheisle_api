@@ -62,9 +62,9 @@ const createNewUser = async (req, res) => {
     });
     const savedUser = await newUser.save();
     const token = jwt.sign({ userId: savedUser._id }, 'your_secret_key', { expiresIn: '1h' });
-    let message = `Hello ${name}, Thank you for registering to be a path of our big day. Your invite code is ${inviteCode} and please note that this invite will only admit one person - Joseph & Zion`
+    let message = `Hello ${name}, Thank you for registering to be a part of our big day. Your invite code is ${inviteCode} and please note that this invite will only admit one person - Joseph & Zion`
     const response = await sendSms(phone, message)
-    console.log({response}, 'My Response here')
+  
     res.status(201).json({
       message: 'User created successfully',
       data: {

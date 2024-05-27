@@ -6,11 +6,11 @@ const { sendEmail } = require('../services/sendEmail');
 
 const generateOTP = async (req, res) => {
     const { email, phone } = req.body
-    if (!email || !phone || phone.length > 13) {
-        return res.status(401).json({ message: 'Enter email' })
+    if (!email) {
+        return res.status(401).json({ message: 'Enter email address' })
     }
     if (!phone || phone.length > 13) {
-        return res.status(401).json({ message: 'Enter email and phone number' })
+        return res.status(401).json({ message: 'Enter valid phone number' })
     }
 
     const userExist = await UserModel.findOne({ email });
@@ -20,7 +20,7 @@ const generateOTP = async (req, res) => {
 
     const userExist_ = await UserModel.findOne({ phone });
     if (userExist_) {
-        return res.status(409).json({ message: 'user with similar credential alredy exist' })
+        return res.status(409).json({ message: 'user with similar credential already exist' })
     }
     const otp = await OtpNumber(6);
     const data = {
