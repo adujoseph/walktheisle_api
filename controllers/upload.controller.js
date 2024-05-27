@@ -21,16 +21,12 @@ const s3 = new S3Client({
 
  
 const getS3PutLink = () => {
-    
+    const { filename , fileSize, fileType, phone} = req.body;
+    const uniqueKeyName = `${Date.now().toString()}-${encodeURIComponent(filename)}`
+    const mimeType = mime(filename);
 }
 
 const uploadImage = async (req, res) => {
-
-    // const { filename , fileSize, fileType, phone} = req.body;
-    // const uniqueKeyName = `${Date.now().toString()}-${encodeURIComponent(filename)}`
-    // const mimeType = mime(filename);
-
-
     try {
         const params = {
             Bucket: bucketname,
@@ -39,8 +35,7 @@ const uploadImage = async (req, res) => {
             ContentType: req.file.mimetype
         }
         const command = new PutObjectCommand(params)
-        const resp = await s3.send(command)
-        console.log(resp)
+        await s3.send(command)
         let data = {
             phone: req.body.phone,
             userId: req.body.userId,
@@ -49,7 +44,6 @@ const uploadImage = async (req, res) => {
        
         const upload = await Upload.create(data);
         const uploadUrl = `https://${bucketname}.s3.amazonaws.com/${Date.now().toString()}-${encodeURIComponent(req.file.originalname)}`
-        console.log(uploadUrl)
         res.status(200).json({ data: upload, message: 'image uploaded successfully' })
     } catch (error) {
         res.status(500).json({ data: null, message: error.message });
