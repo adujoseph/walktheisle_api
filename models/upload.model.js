@@ -5,10 +5,10 @@ const UploadSchema = mongoose.Schema(
     phone: {
       type: String,
     },
-    userId: {
+    imageName: {
       type: String,
     },
-    imageName: {
+    imageUrl: {
       type: String,
     },
   },

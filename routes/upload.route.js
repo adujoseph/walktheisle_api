@@ -1,9 +1,15 @@
 const express = require("express");
 const router = express.Router();
-const { uploadImage, getAllImages } = require("../controllers/upload.controller");
+const { uploadImage, getAllImages, getPutLink, finalizeUpload } = require("../controllers/upload.controller");
 const multer = require('multer')
 const storage = multer.memoryStorage();
 const upload = multer({storage})
+
+
+
+router.post('/get-put-link',getPutLink);
+
+router.post('/finalize-upload',finalizeUpload);
 
 
 
